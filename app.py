@@ -26,16 +26,15 @@ class Employee(db.Model):
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(200), unique=True)
-    address = db.relationships('Address', backref='employee', uselist=False)
+    address = db.relationship('Address', backref='employee', uselist=False)
     birth_date = db.Column(db.DateTime)
     salary = db.Column(db.Integer, nullable=False)
     created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    def __init__(first_name, last_name, email, address, birth_date, salary):
+    def __init__(self, first_name, last_name, email, birth_date, salary):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
-        self.address = address
         self.birth_date = birth_date
         self.salary = salary
 
@@ -47,7 +46,7 @@ class Employee(db.Model):
 class Address(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     city = db.Column(db.String(100), nullable=False)
-    post_code = db.Column(db.Sting(6), nullable=False)
+    post_code = db.Column(db.String(6), nullable=False)
     street = db.Column(db.String(100), nullable=False)
     number = db.Column(db.Integer, nullable=False)
     employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
@@ -64,22 +63,44 @@ class Address(db.Model):
 
 # Employee Schema
 class EmployeeSchema(ma.Schema):
-    pass
+    class Meta:
+        fields = ('id', 'first_name', 'last_name', 'email', 'birth_date', 'salary', 'created')
 
 
 # Address Schema
 class AddressSchema(ma.Schema):
-    pass
+    class Meta:
+        fields = ('id', 'city', 'post_code', 'street', 'number', 'employee_id')
 
 
-@app.route('/employees', method=['POST'])
+# Init shchemas
+employee_schema = EmployeeSchema()
+employees_schema = EmployeeSchema(many=True)
+address_schema = AddressSchema()
+
+@app.route('/employees', methods=['POST'])
 def add_employee():
-    pass
+    first_name = request.json['first_name']
+    last_name = request.json['last_name']
+    email = request.json['email']
+    birth_date_str = request.json['birth_date']
+    year, month, day = birth_date_str.split('-')
+    birth_date = datetime(int(year), int(month), int(day))
+    salary = request.json['salary']
+
+    employee = Employee(first_name, last_name, email, birth_date, salary)
+
+    db.session.add(employee)
+    db.session.commit()
+
+    return employee_schema.jsonify(employee)
 
 
 @app.route('/employees', methods=['GET'])
 def get_employees():
-    pass
+    employees = Employee.query.all()
+    result = employees_schema.dump(employees)
+    return jsonify(result)
 
 
 @app.route('/employees/<int:id>', methods=['GET'])
@@ -103,6 +124,10 @@ def get_employee_address(id):
     pass
 
 
-@app.route('employees/<int:id>/address', methods=['PUT'])
+@app.route('/employees/<int:id>/address', methods=['PUT'])
 def update_employee_address(id):
     pass
+
+# Run server
+if __name__ == '__main__':
+    app.run(debug=True)
