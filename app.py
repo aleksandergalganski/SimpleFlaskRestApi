@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from datetime import datetime
@@ -51,12 +51,13 @@ class Address(db.Model):
     number = db.Column(db.Integer, nullable=False)
     employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
 
-    def __init__(self, city, post_code, street, number):
+    def __init__(self, city, post_code, street, number, employee_id):
         self.city = city
         self.post_code = post_code
         self.street = street
         self.number = number
-        
+        self.employee_id = employee_id
+
     def __repr__(self):
         return f'Address({self.city}, {self.street}, {self.number}'
 
@@ -77,6 +78,7 @@ class AddressSchema(ma.Schema):
 employee_schema = EmployeeSchema()
 employees_schema = EmployeeSchema(many=True)
 address_schema = AddressSchema()
+
 
 @app.route('/employees', methods=['POST'])
 def add_employee():
@@ -105,29 +107,112 @@ def get_employees():
 
 @app.route('/employees/<int:id>', methods=['GET'])
 def get_employee(id):
-    pass
+    employee = Employee.query.get(id)
+    if employee:    
+        return employee_schema.jsonify(employee)
+    else:
+        abort(404)
 
 
 @app.route('/employees/<int:id>', methods=['PUT'])
 def update_employee(id):
-    pass
+    employee = Employee.query.get(id)
+    if employee:    
+        first_name = request.json['first_name']
+        last_name = request.json['last_name']
+        email = request.json['email']
+        birth_date_str = request.json['birth_date']
+        year, month, day = birth_date_str.split('-')
+        birth_date = datetime(int(year), int(month), int(day))
+        salary = request.json['salary']
+
+        employee.first_name = first_name
+        employee.last_name = last_name
+        employee.email = email
+        employee.birth_date = birth_date
+        employee.salary = salary
+
+        db.session.commit()
+
+        return employee_schema.jsonify(employee)
+    else:
+        abort(404)
 
 
 @app.route('/employees/<int:id>', methods=['DELETE'])
 def delete_employee(id):
-    pass
-# Delete also address asociated with employee
+    employee = Employee.query.get(id)
+
+    if employee:
+        employee_id = employee_id
+        db.session.delete(employee)
+
+        address = Address.query.get(employee_id)
+        if address:
+            db.session.delete(address)
+        db.session.commit()
+        return jsonify({'result': 'true'})
+    else:
+        abort(404)
+
+
+@app.route('/employees/<int:id>/address', methods=['POST'])
+def add_employee_address(id):
+    employee = Employee.query.get(id)
+
+    if employee:
+        city = request.json['city']
+        post_code = request.json['post_code']
+        street = request.json['street']
+        number = int(request.json['number'])
+
+        address = Address(city, post_code, street, number, id)
+
+        db.session.add(address)
+        db.session.commit()
+
+        return address_schema.jsonify(address)
+    else:
+        abort(404)
+
 
 
 @app.route('/employees/<int:id>/address', methods=['GET'])
 def get_employee_address(id):
-    pass
+    employee = Employee.query.get(id)
+    if employee:    
+        address = Address.query.filter_by(employee_id=employee.id).first()
+        if address:
+            return address_schema.jsonify(address)
+        abort(404)
+    abort(404)
 
 
 @app.route('/employees/<int:id>/address', methods=['PUT'])
 def update_employee_address(id):
-    pass
+    employee = Employee.query.get(id)
+    if employee:    
+        address = Address.query.filter_by(employee_id=employee.id).first()
+        if address:
+            city = request.json['city']
+            post_code = request.json['post_code']
+            street = request.json['street']
+            number = int(request.json['number'])
+
+            address.city = city
+            address.post_code = post_code
+            address.street = street
+            address.number = number
+
+            db.session.commit()
+
+            return address_schema.jsonify(address)
+
+        abort(404)
+    abort(404)
+
 
 # Run server
 if __name__ == '__main__':
     app.run(debug=True)
+    
