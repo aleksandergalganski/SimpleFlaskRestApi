@@ -79,6 +79,7 @@ employee_schema = EmployeeSchema()
 employees_schema = EmployeeSchema(many=True)
 address_schema = AddressSchema()
 
+# API Routes
 
 @app.route('/employees', methods=['POST'])
 def add_employee():
@@ -101,6 +102,7 @@ def add_employee():
 @app.route('/employees', methods=['GET'])
 def get_employees():
     employees = Employee.query.all()
+    print(employees)
     result = employees_schema.dump(employees)
     return jsonify(result)
 
@@ -144,7 +146,7 @@ def delete_employee(id):
     employee = Employee.query.get(id)
 
     if employee:
-        employee_id = employee_id
+        employee_id = employee.id
         db.session.delete(employee)
 
         address = Address.query.get(employee_id)
@@ -215,4 +217,3 @@ def update_employee_address(id):
 # Run server
 if __name__ == '__main__':
     app.run(debug=True)
-    
