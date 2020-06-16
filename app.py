@@ -23,23 +23,23 @@ ma = Marshmallow(app)
 # Employee Model
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(100), nullable=False)
-    last_name = db.Column(db.String(100), nullable=False)
+    firstName = db.Column(db.String(100), nullable=False)
+    lastName = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(200), unique=True)
     address = db.relationship('Address', backref='employee', uselist=False)
-    birth_date = db.Column(db.DateTime)
+    birthDate = db.Column(db.DateTime)
     salary = db.Column(db.Integer, nullable=False)
     created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    def __init__(self, first_name, last_name, email, birth_date, salary):
-        self.first_name = first_name
-        self.last_name = last_name
+    def __init__(self, firstName, lastName, email, birthDate, salary):
+        self.firstName = firstName
+        self.lastName = lastName
         self.email = email
-        self.birth_date = birth_date
+        self.birthDate = birthDate
         self.salary = salary
 
     def __repr__(self):
-        return f'Employee({self.first_name}, {self.last_name})'
+        return f'Employee({self.firstName}, {self.lastName})'
 
 
 # Address Model
@@ -65,7 +65,7 @@ class Address(db.Model):
 # Employee Schema
 class EmployeeSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'first_name', 'last_name', 'email', 'birth_date', 'salary', 'created')
+        fields = ('id', 'firstName', 'lastName', 'email', 'birthDate', 'salary', 'created')
 
 
 # Address Schema
@@ -83,15 +83,15 @@ address_schema = AddressSchema()
 
 @app.route('/employees', methods=['POST'])
 def add_employee():
-    first_name = request.json['first_name']
-    last_name = request.json['last_name']
+    firstName = request.json['firstName']
+    lastName = request.json['lastName']
     email = request.json['email']
-    birth_date_str = request.json['birth_date']
-    year, month, day = birth_date_str.split('-')
-    birth_date = datetime(int(year), int(month), int(day))
+    birthDate_str = request.json['birthDate']
+    year, month, day = birthDate_str.split('-')
+    birthDate = datetime(int(year), int(month), int(day))
     salary = request.json['salary']
 
-    employee = Employee(first_name, last_name, email, birth_date, salary)
+    employee = Employee(firstName, lastName, email, birthDate, salary)
 
     db.session.add(employee)
     db.session.commit()
@@ -120,18 +120,18 @@ def get_employee(id):
 def update_employee(id):
     employee = Employee.query.get(id)
     if employee:    
-        first_name = request.json['first_name']
-        last_name = request.json['last_name']
+        firstName = request.json['firstName']
+        lastName = request.json['lastName']
         email = request.json['email']
-        birth_date_str = request.json['birth_date']
-        year, month, day = birth_date_str.split('-')
-        birth_date = datetime(int(year), int(month), int(day))
+        birthDate_str = request.json['birthDate']
+        year, month, day = birthDate_str.split('-')
+        birthDate = datetime(int(year), int(month), int(day))
         salary = request.json['salary']
 
-        employee.first_name = first_name
-        employee.last_name = last_name
+        employee.firstName = firstName
+        employee.lastName = lastName
         employee.email = email
-        employee.birth_date = birth_date
+        employee.birthDate = birthDate
         employee.salary = salary
 
         db.session.commit()
