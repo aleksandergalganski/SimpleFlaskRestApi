@@ -113,6 +113,12 @@ def get_employees():
     return jsonify(result)
 
 
+@app.route('/employees/count', methods=['GET'])
+def get_employees_count():
+    employees_count = len(Employee.query.all())
+    return jsonify({'count': employees_count})
+
+
 @app.route('/employees/<int:id>', methods=['GET'])
 def get_employee(id):
     employee = Employee.query.get(id)
@@ -155,11 +161,11 @@ def delete_employee(id):
 
     if employee:
         employeeId = employee.id
-        db.session.delete(employee)
 
         address = Address.query.get(employeeId)
         if address:
             db.session.delete(address)
+        db.session.delete(employee)
         db.session.commit()
         return jsonify({'result': 'true'})
     else:
@@ -181,7 +187,7 @@ def add_employee_address(id):
         db.session.add(address)
         db.session.commit()
 
-        return address_schema.jsonify(address)
+        return address_schema.jsonify(address)  
     else:
         abort(404)
 
