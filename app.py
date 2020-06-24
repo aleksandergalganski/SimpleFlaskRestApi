@@ -160,12 +160,10 @@ def delete_employee(id):
     employee = Employee.query.get(id)
 
     if employee:
-        employeeId = employee.id
-
-        address = Address.query.get(employeeId)
+        address = Address.query.filter_by(employeeId=employee.id).first()
         if address:
             db.session.delete(address)
-        db.session.delete(employee)
+            db.session.delete(employee)
         db.session.commit()
         return jsonify({'result': 'true'})
     else:
